@@ -1,0 +1,15 @@
+{
+  "require": {
+    "php": ">=5.6.0",
+    "fzaninotto/faker": "@stable",
+    "php-di/php-di": "@stable"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "@stable"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/App"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+Options +FollowSymLinks
+IndexIgnore */*
+RewriteEngine on
+
+# if a directory or a file exists, use it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# otherwise forward it to index.php
+RewriteRule ^(.*)$ /index.php [L]
+
+php_value upload_max_filesize 128M
+php_value post_max_size 128M
+php_value max_execution_time 200
+php_value max_input_time 200
+
+php_value session.cache_expire 4320
+php_value session.use_only_cookies 0
+php_value session.save_handler redis
+php_value session.save_path "tcp://localhost:6379?weight=1"
+
+AddDefaultCharset utf-8

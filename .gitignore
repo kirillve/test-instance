@@ -1,0 +1,10 @@
+!.gitignore
+vendor/
+# projects
+.idea/*
+# cache directories
+Thumbs.db
+*.DS_Store
+*.empty
+#
+.php_cs.cache
