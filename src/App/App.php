@@ -39,7 +39,11 @@ class App
      */
     public function run($uri, $namespace)
     {
+                
+        list($uri, $queryParam)    = explode('?',$uri);
+
         list($controller, $action) = explode('/', trim($uri, '/'));
+        
         if (!$controller) {
             $controller = 'Default';
         }
@@ -49,10 +53,23 @@ class App
         $controller_class_name = rtrim($namespace, '\\') . '\\' . ucfirst($controller) . 'Controller';
 
         $controller_object = $this->container->get($controller_class_name);
-        $response = call_user_func_array([$controller_object, 'action' . ucfirst($action)], []);
+        $response = call_user_func_array([$controller_object, 'action' . ucfirst($action)], []); 
         if (!$response instanceof Response) {
             throw new \Exception('Unsupported response type');
         }
+
+        if(isset($_GET['format']) && !empty($_GET['format']))
+        {
+
+            $response->setResponseFormat($_GET['format']);
+        }
+
+        if(isset($_GET['fields']) && !empty($_GET['fields']))
+        {
+
+            $response->setResponseFields(explode(',',$_GET['fields']));
+        }
+
         return $response;
     }
 }
