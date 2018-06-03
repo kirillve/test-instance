@@ -82,6 +82,14 @@ class Response
      * @var array
      */
     protected $httpHeaders = array();
+    /**
+     * @var string
+     */
+    protected $responseFormat = '';
+    /**
+     * @var array
+     */
+    protected $responseFields = '';
 
     /**
      * Response constructor.
@@ -155,13 +163,117 @@ class Response
      */
     public function getResponseBody()
     {
-        $response = null;
-        if (is_array($this->parameters)) {
-            foreach ($this->parameters as $key => $value) {
-                $response .= $key . ' ==> ' . $value . PHP_EOL;
+        $response = '';
+        
+        if(!empty($this->responseFields)){
+           $this->parameters = $this->filterResponseFields($this->parameters,$this->responseFields);
+        }
+
+        switch ($this->responseFormat) {
+            case 'text':
+                if (is_array($this->parameters)) {
+                    $response = "Status:".$this->getStatusCode().", ".$this->responseFormatText($this->parameters);
+                }
+                break;
+            case 'json':
+                $response = json_encode(array(
+                    'status'=>$this->getStatusCode(), 
+                    'body'=>$this->parameters
+                ));
+                break;
+            case 'xml':
+                $xmlUserInfo = new \SimpleXMLElement("<?xml version=\"1.0\"?><root></root>");
+                $this->responseFormatXml(array(
+                    'status'=>$this->getStatusCode(),
+                    'body'=>array(
+                        'user_info'=>$this->parameters
+                    )
+                ),$xmlUserInfo);
+                $response = $xmlUserInfo->asXML();                 
+                break;            
+            default:
+                if (is_array($this->parameters)) {
+                    $response = "Status:".$this->getStatusCode().", ".$this->responseFormatText($this->parameters);
+                }
+                break;
+        }
+
+        return $response;
+    }
+
+
+    /**
+     * Function to filter response fields
+     *
+     * @param array $responseData
+     * @param array $responseFields
+     * @return array
+     */
+    public function filterResponseFields($responseData,$responseFields, &$specialItems = [])
+    {
+        if(!empty($responseData)) {
+            $data = [];
+
+            foreach($responseData as $key => $val) { 
+                if(is_array($val)) {
+                    $this->filterResponseFields($val,$responseFields, $specialItems);
+                }
+                else{
+                    if(in_array($key,$responseFields)) {
+                        $data[$key] = $val;
+                    }
+                }
+            }  
+            
+            if(!empty($data)){
+                $specialItems[] = $data;
+            }
+        }
+
+        return $specialItems;
+    }
+
+
+    /**
+     * Function to response formate text
+     *
+     * @param array $responseData
+     * @return array
+     */
+    public function responseFormatText($responseData,&$response = '') 
+    {
+        foreach($responseData as $key => $value) {
+            if(is_array($value)) {
+                $response .= PHP_EOL.PHP_EOL.PHP_EOL;
+                $this->responseFormatText($value, $response);
+            }else {
+                $response .= $key . ' ==> ' . $value .PHP_EOL;
             }
         }
         return $response;
+    }
+
+
+    /**
+     * Function to response formate xml
+     *
+     * @param array $responseData
+     * @return array
+     */
+    public function responseFormatXml($responseData, &$xmlUserInfo) {
+        foreach($responseData as $key => $value) {
+            if(is_array($value)) {
+                if(!is_numeric($key)){
+                    $subNode = $xmlUserInfo->addChild("$key");
+                    $this->responseFormatXml($value, $subNode);
+                }else{
+                    $subNode = $xmlUserInfo->addChild("item$key");
+                    $this->responseFormatXml($value, $subNode);
+                }
+            }else {
+                $xmlUserInfo->addChild("$key",htmlspecialchars("$value"));
+            }
+        }
     }
 
     /**
@@ -210,6 +322,39 @@ class Response
     {
         $this->parameters = $parameters;
     }
+
+    /**
+     * @return string
+     */
+    public function getResponseFormat()
+    {
+        return $this->responseFormat;
+    }
+
+    /**
+     * @param string $responseFormat
+     */
+    public function setResponseFormat($responseFormat)
+    {
+        $this->responseFormat = $responseFormat;
+    }
+
+    /**
+     * @return array
+     */
+    public function getResponseFields()
+    {
+        return $this->responseFields;
+    }
+
+    /**
+     * @param array $responseFields
+     */
+    public function setResponseFields($responseFields)
+    {
+        $this->responseFields = $responseFields;
+    }
+
 
     /**
      * @param string $name
